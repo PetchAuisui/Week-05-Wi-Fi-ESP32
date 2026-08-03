@@ -17,25 +17,29 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-#define TARGET_WIFI_SSID   "S24 Ultra Koson"
-#define TARGET_WIFI_PASS   "1234567890"
+#define TARGET_WIFI_SSID   "Test-WiFi"
+#define TARGET_WIFI_PASS   "0954276527"
 
 static const char *get_disconnect_reason_info(uint8_t reason) {
   switch (reason) {
   case WIFI_REASON_UNSPECIFIED:
-    return "WIFI_REASON_UNSPECIFIED (1)";
+    return "WIFI_REASON_UNSPECIFIED (1) [Phase 2/3]";
   case WIFI_REASON_AUTH_EXPIRE:
-    return "WIFI_REASON_AUTH_EXPIRE (2)";
+    return "WIFI_REASON_AUTH_EXPIRE (2) [Phase 2: Auth Timeout / Weak Signal]";
   case WIFI_REASON_AUTH_FAIL:
-    return "WIFI_REASON_AUTH_FAIL (1/202)";
-  case WIFI_REASON_ASSOC_EXPIRE:
-    return "WIFI_REASON_ASSOC_EXPIRE (4)";
+    return "WIFI_REASON_AUTH_FAIL (1/202) [Phase 2: Auth Rejected / MAC Filter / SAE Auth Fail]";
+  case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+    return "WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY (4) [Phase 3: Assoc Timeout / Packet Loss]";
   case WIFI_REASON_ASSOC_FAIL:
-    return "WIFI_REASON_ASSOC_FAIL (3/203)";
-  case WIFI_REASON_HANDSHAKE_TIMEOUT:
-    return "WIFI_REASON_HANDSHAKE_TIMEOUT (15) [Phase 4: MIC mismatch / EAPOL timeout]";
+    return "WIFI_REASON_ASSOC_FAIL (3/203) [Phase 3: Assoc Rejected / Mismatch]";
+  case WIFI_REASON_ASSOC_TOOMANY:
+    return "WIFI_REASON_ASSOC_TOOMANY (5/17) [Phase 3: AP Max Clients Exceeded]";
+  case WIFI_REASON_ASSOC_NOT_AUTHED:
+    return "WIFI_REASON_ASSOC_NOT_AUTHED (6/9) [Phase 3: Assoc Sent Before Auth]";
   case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-    return "WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT (204) [Phase 4: Wrong Password]";
+    return "WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT (15) [Phase 4: MIC Mismatch / Wrong Password]";
+  case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    return "WIFI_REASON_HANDSHAKE_TIMEOUT (204) [Phase 4: 4-Way Handshake Timeout / Wrong Password]";
   case WIFI_REASON_NO_AP_FOUND:
     return "WIFI_REASON_NO_AP_FOUND (201) [Phase 1: SSID Not Found]";
   case WIFI_REASON_BEACON_TIMEOUT:
@@ -51,6 +55,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
     case WIFI_EVENT_STA_START:
       ESP_LOGI(TAG, "[EVENT FORENSIC]: WIFI_EVENT_STA_START received");
+      ESP_LOGI(TAG, "[FORENSIC]: Initiating Wi-Fi connection...");
       ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_connect()");
       esp_err_t err_conn = esp_wifi_connect();
       ESP_LOGI(TAG, "[FORENSIC]: esp_wifi_connect() returned %s (0x%x)",
@@ -117,6 +122,9 @@ static void test_handshake_ip_phase(const char *test_title, const char *ssid,
   ESP_LOGI(TAG, "  Target SSID    : \"%s\"", ssid);
   ESP_LOGI(TAG, "  Target Password: \"%s\"", password);
 
+  ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_stop()");
+  esp_wifi_stop();
+  vTaskDelay(pdMS_TO_TICKS(1000));
   xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
 
   wifi_config_t wifi_config = {
@@ -127,9 +135,6 @@ static void test_handshake_ip_phase(const char *test_title, const char *ssid,
   strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
   strncpy((char *)wifi_config.sta.password, password,
           sizeof(wifi_config.sta.password));
-
-  ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_stop()");
-  esp_wifi_stop();
 
   ESP_LOGI(TAG, "[FORENSIC]: Call esp_wifi_set_config(WIFI_IF_STA, &wifi_config)");
   esp_err_t err_cfg = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
@@ -214,7 +219,7 @@ void app_main(void) {
   test_handshake_ip_phase("Experiment 5.4.1: Handshake & IP Test - Correct Password",
                           TARGET_WIFI_SSID, TARGET_WIFI_PASS);
 
-  vTaskDelay(pdMS_TO_TICKS(2000));
+  vTaskDelay(pdMS_TO_TICKS(3000));
 
   // ------------------------------------------------------------------
   // 5.4.2 Simulated Handshake Failure Case: Wrong Password
