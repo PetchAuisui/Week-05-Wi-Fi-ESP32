@@ -19,8 +19,8 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT BIT1
 
 // Configurable target Wi-Fi credentials for successful test
-#define EXAMPLE_ESP_WIFI_SSID "MY_SSID"
-#define EXAMPLE_ESP_WIFI_PASS "MY_PASSWORD"
+#define EXAMPLE_ESP_WIFI_SSID "Test-WiFi"
+#define EXAMPLE_ESP_WIFI_PASS "0954276527"
 
 // Convert wifi_reason_code_t to readable string
 static const char *get_disconnect_reason_name(uint8_t reason) {
@@ -31,22 +31,22 @@ static const char *get_disconnect_reason_name(uint8_t reason) {
     return "WIFI_REASON_AUTH_EXPIRE (2)";
   case WIFI_REASON_AUTH_LEAVE:
     return "WIFI_REASON_AUTH_LEAVE (3)";
-  case WIFI_REASON_ASSOC_EXPIRE:
-    return "WIFI_REASON_ASSOC_EXPIRE (4)";
+  case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+    return "WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY (4)";
   case WIFI_REASON_ASSOC_FAIL:
     return "WIFI_REASON_ASSOC_FAIL (203)";
-  case WIFI_REASON_NOT_AUTHED:
-    return "WIFI_REASON_NOT_AUTHED (6)";
-  case WIFI_REASON_HANDSHAKE_TIMEOUT:
-    return "WIFI_REASON_HANDSHAKE_TIMEOUT (15)";
+  case WIFI_REASON_ASSOC_NOT_AUTHED:
+    return "WIFI_REASON_ASSOC_NOT_AUTHED (9)";
+  case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+    return "WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT (15)";
   case WIFI_REASON_NO_AP_FOUND:
     return "WIFI_REASON_NO_AP_FOUND (201)";
   case WIFI_REASON_AUTH_FAIL:
     return "WIFI_REASON_AUTH_FAIL (202)";
-  case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-    return "WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT (204)";
+  case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    return "WIFI_REASON_HANDSHAKE_TIMEOUT (204)";
   case WIFI_REASON_CONNECTION_FAIL:
-    return "WIFI_REASON_CONNECTION_FAIL (208)";
+    return "WIFI_REASON_CONNECTION_FAIL (205)";
   case WIFI_REASON_BEACON_TIMEOUT:
     return "WIFI_REASON_BEACON_TIMEOUT (200)";
   default:
@@ -136,7 +136,7 @@ static void test_wifi_connection(const char *test_title, const char *ssid,
   wifi_config_t wifi_config = {
       .sta =
           {
-              .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+              .threshold.authmode = WIFI_AUTH_OPEN,
           },
   };
   strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
